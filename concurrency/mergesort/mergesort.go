@@ -1,7 +1,12 @@
 package main
 
-import "fmt"
-import "math/rand"
+import (
+	"fmt"
+	"math/rand"
+	"reflect"
+	"sync"
+	"time"
+)
 
 func Merge(ldata []float64, rdata []float64) (result []float64) {
 	result = make([]float64, len(ldata)+len(rdata))
@@ -26,25 +31,45 @@ func Merge(ldata []float64, rdata []float64) (result []float64) {
 	return
 }
 
-func MultiMergeSort(data []float64, r chan []float64) {
+func MultiMergeSort(data []float64, sem chan struct{}) []float64 {
 	if len(data) < 2 {
-		r <- data
-		return
+		return data
 	}
 
-	leftChan := make(chan []float64)
-	rightChan := make(chan []float64)
 	middle := len(data) / 2
-	go MultiMergeSort(data[:middle], leftChan)
-	go MultiMergeSort(data[middle:], rightChan)
 
-	ldata := <-leftChan
-	rdata := <-rightChan
+	wg := sync.WaitGroup{}
+	wg.Add(2)
 
-	close(leftChan)
-	close(rightChan)
-	r <- Merge(ldata, rdata)
-	return
+	var ldata []float64
+	var rdata []float64
+
+	select {
+	case sem <- struct{}{}:
+		go func() {
+			ldata = MultiMergeSort(data[:middle], sem)
+			<-sem
+			wg.Done()
+		}()
+	default:
+		ldata = SingleMergeSort(data[:middle])
+		wg.Done()
+	}
+
+	select {
+	case sem <- struct{}{}:
+		go func() {
+			rdata = MultiMergeSort(data[middle:], sem)
+			<-sem
+			wg.Done()
+		}()
+	default:
+		rdata = SingleMergeSort(data[middle:])
+		wg.Done()
+	}
+
+	wg.Wait()
+	return Merge(ldata, rdata)
 }
 
 func SingleMergeSort(data []float64) []float64 {
@@ -56,22 +81,21 @@ func SingleMergeSort(data []float64) []float64 {
 }
 
 func main() {
-	size := 10
+	size := 16777216
+	sem := make(chan struct{}, 4)
+
 	s := make([]float64, size)
 	for i := 0; i < cap(s); i++ {
 		s[i] = rand.Float64() * float64(size)
 	}
-	result := make(chan []float64)
-	go MultiMergeSort(s, result)
 
-	fmt.Println("Multithreading...")
-	r := <-result
-	fmt.Println(r)
+	start := time.Now()
+	multiResult := MultiMergeSort(s, sem)
+	fmt.Println(time.Since(start))
 
-	close(result)
-
-	fmt.Println("Singlethreading...")
+	start = time.Now()
 	singleResult := SingleMergeSort(s)
-	fmt.Println(singleResult)
+	fmt.Println(time.Since(start))
 
+	fmt.Println(reflect.DeepEqual(singleResult, multiResult))
 }
