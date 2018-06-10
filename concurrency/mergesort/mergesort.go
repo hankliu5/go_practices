@@ -31,7 +31,28 @@ func Merge(ldata []float64, rdata []float64) (result []float64) {
 	return
 }
 
-func MultiMergeSort(data []float64, sem chan struct{}) []float64 {
+func MultiMergeSort(data []float64, res chan []float64) {
+	if len(data) < 2 {
+		res <- data
+		return
+	}
+
+	leftChan := make(chan []float64)
+	rightChan := make(chan []float64)
+	middle := len(data) / 2
+
+	go MultiMergeSort(data[:middle], leftChan)
+	go MultiMergeSort(data[middle:], rightChan)
+	ldata := <-leftChan
+	rdata := <-rightChan
+
+	close(leftChan)
+	close(rightChan)
+	res <- Merge(ldata, rdata)
+	return
+}
+
+func MultiMergeSortWithSem(data []float64, sem chan struct{}) []float64 {
 	if len(data) < 2 {
 		return data
 	}
@@ -47,7 +68,7 @@ func MultiMergeSort(data []float64, sem chan struct{}) []float64 {
 	select {
 	case sem <- struct{}{}:
 		go func() {
-			ldata = MultiMergeSort(data[:middle], sem)
+			ldata = MultiMergeSortWithSem(data[:middle], sem)
 			<-sem
 			wg.Done()
 		}()
@@ -59,7 +80,7 @@ func MultiMergeSort(data []float64, sem chan struct{}) []float64 {
 	select {
 	case sem <- struct{}{}:
 		go func() {
-			rdata = MultiMergeSort(data[middle:], sem)
+			rdata = MultiMergeSortWithSem(data[middle:], sem)
 			<-sem
 			wg.Done()
 		}()
@@ -81,21 +102,33 @@ func SingleMergeSort(data []float64) []float64 {
 }
 
 func main() {
-	size := 16777216
+	size := 2097152
 	sem := make(chan struct{}, 4)
 
+	fmt.Println("generate numbers...")
 	s := make([]float64, size)
 	for i := 0; i < cap(s); i++ {
 		s[i] = rand.Float64() * float64(size)
 	}
 
+	fmt.Println("running multithread without limited number of threads")
 	start := time.Now()
-	multiResult := MultiMergeSort(s, sem)
+	res := make(chan []float64)
+	go MultiMergeSort(s, res)
+	multiResult := <-res
 	fmt.Println(time.Since(start))
 
+	fmt.Println("running multithread with limited number of threads")
+	start = time.Now()
+	multiResultWithSem := MultiMergeSortWithSem(s, sem)
+	fmt.Println(time.Since(start))
+
+	fmt.Println("running single thread")
 	start = time.Now()
 	singleResult := SingleMergeSort(s)
 	fmt.Println(time.Since(start))
 
-	fmt.Println(reflect.DeepEqual(singleResult, multiResult))
+	fmt.Println("Verifying the answer")
+	fmt.Println(reflect.DeepEqual(singleResult, multiResult) &&
+		reflect.DeepEqual(singleResult, multiResultWithSem))
 }
