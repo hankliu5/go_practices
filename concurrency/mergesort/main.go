@@ -19,10 +19,16 @@ func generateArray(numOfElements int) []float64 {
 
 func main() {
 	var size int
+	var err error
 	if len(os.Args) < 2 {
 		size = 2097152
 	} else {
-		size, _ = strconv.Atoi(os.Args[1])
+		size, err = strconv.Atoi(os.Args[1])
+	}
+
+	if err != nil {
+		fmt.Println("Convert number incorrectly")
+		os.Exit(1)
 	}
 
 	fmt.Println("generate " + strconv.Itoa(size) + " numbers...")
