@@ -36,12 +36,12 @@ func main() {
 
 	fmt.Println("running multithread without limited number of threads")
 	start := time.Now()
-	multiResult := runMultiMergeSort(s)
+	multiResult := RunMultiMergeSort(s)
 	fmt.Println(time.Since(start))
 
 	fmt.Println("running multithread with limited number of threads")
 	start = time.Now()
-	multiResultWithSem := runMultiMergesortWithSem(s)
+	multiResultWithSem := RunMultiMergesortWithSem(s)
 	fmt.Println(time.Since(start))
 
 	fmt.Println("running single thread")

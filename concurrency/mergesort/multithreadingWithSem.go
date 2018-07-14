@@ -45,7 +45,7 @@ func MultiMergeSortWithSem(data []float64, sem chan struct{}) []float64 {
 	return Merge(ldata, rdata)
 }
 
-func runMultiMergesortWithSem(data []float64) []float64 {
+func RunMultiMergesortWithSem(data []float64) []float64 {
 	sem := make(chan struct{}, 4)
 	return MultiMergeSortWithSem(data, sem)
 }

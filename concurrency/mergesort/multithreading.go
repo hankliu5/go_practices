@@ -21,7 +21,7 @@ func MultiMergeSort(data []float64, res chan []float64) {
 	return
 }
 
-func runMultiMergeSort(data []float64) (multiResult []float64) {
+func RunMultiMergeSort(data []float64) (multiResult []float64) {
 	res := make(chan []float64)
 	go MultiMergeSort(data, res)
 	multiResult = <-res
