@@ -5,13 +5,16 @@ import (
 	"time"
 )
 
-func Generate(ch chan<- int) {
+// use a goroutine to keep generating number sequence
+// channel is synchronous
+func generate(ch chan<- int) {
 	for i := 2; ; i++ {
 		ch <- i
 	}
 }
 
-func Filter(in <-chan int, out chan<- int, prime int) {
+// take input number sequence from previous filter, use the prime to keep filter out non-prime number
+func filter(in <-chan int, out chan<- int, prime int) {
 	for {
 		i := <-in
 		if i%prime != 0 {
@@ -21,14 +24,18 @@ func Filter(in <-chan int, out chan<- int, prime int) {
 }
 
 func main() {
-	const n = 10000
+	const n = 1000
 	start := time.Now()
 	ch := make(chan int)
-	go Generate(ch)
+	// the source that generates sequences.
+	go generate(ch)
 	for i := 0; i < n; i++ {
 		prime := <-ch
+		// fmt.Println(prime)
 		ch1 := make(chan int)
-		go Filter(ch, ch1, prime)
+		// generate a new goroutine here as a filter that holds prime to filter out not-prime numbers
+		go filter(ch, ch1, prime)
+		// make the filtered output be a new input for next filter goroutine
 		ch = ch1
 	}
 	fmt.Println(time.Since(start))
