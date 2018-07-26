@@ -19,6 +19,7 @@ type Search func(query string) Result
 
 type Result string
 
+// the main search function
 func fakeSearch(kind string) Search {
 	return func(query string) Result {
 		time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
@@ -26,6 +27,7 @@ func fakeSearch(kind string) Search {
 	}
 }
 
+// sequence search.
 func Google(query string) (results []Result) {
 	results = append(results, Web(query))
 	results = append(results, Image(query))
@@ -33,8 +35,11 @@ func Google(query string) (results []Result) {
 	return
 }
 
+// concurrent search but it still put out the result from channel one by one.
 func Google2_0(query string) (results []Result) {
 	c := make(chan Result)
+
+	// run these searches concurrently but these goroutines are waiting for putting the result into the channel.
 	go func() { c <- Web(query) }()
 	go func() { c <- Image(query) }()
 	go func() { c <- Video(query) }()
@@ -46,6 +51,7 @@ func Google2_0(query string) (results []Result) {
 	return
 }
 
+// concurrent search with timeout so it doesn't wait for the long responses.
 func Google2_1(query string) (results []Result) {
 	c := make(chan Result)
 	go func() { c <- Web(query) }()
@@ -65,6 +71,7 @@ func Google2_1(query string) (results []Result) {
 	return
 }
 
+// runs replica search and return the first result from the channel.
 func FirstResult(query string, replicas ...Search) Result {
 	c := make(chan Result)
 	searchReplica := func(i int) { c <- replicas[i](query) }
@@ -74,6 +81,7 @@ func FirstResult(query string, replicas ...Search) Result {
 	return <-c
 }
 
+// replica search to reduce the timeout opportunity
 func Google3_0(query string) (results []Result) {
 	c := make(chan Result)
 	go func() { c <- FirstResult(query, Web, Web2) }()
