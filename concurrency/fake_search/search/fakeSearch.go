@@ -1,4 +1,4 @@
-package fakesearch
+package search
 
 import (
 	"fmt"

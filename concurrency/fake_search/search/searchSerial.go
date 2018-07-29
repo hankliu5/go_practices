@@ -1,4 +1,4 @@
-package fakesearch
+package search
 
 // serial search.
 func SearchSerial(query string) (results []Result) {

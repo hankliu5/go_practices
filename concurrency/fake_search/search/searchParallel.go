@@ -1,4 +1,4 @@
-package fakesearch
+package search
 
 // concurrent search but it still put out the result from channel one by one.
 func SearchParallel(query string) (results []Result) {
