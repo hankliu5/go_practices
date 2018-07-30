@@ -1,12 +1,13 @@
 package search
 
 import (
+	"errors"
 	"fmt"
 	"time"
 )
 
 // runs replica search and return the first result from the channel.
-func FirstResult(query string, replicas ...Search) Result {
+func FirstResult(query string, replicas ...SearchFunc) Result {
 	c := make(chan Result)
 	searchReplica := func(i int) { c <- replicas[i](query) }
 	for i := range replicas {
@@ -16,20 +17,23 @@ func FirstResult(query string, replicas ...Search) Result {
 }
 
 // replica search to reduce the timeout opportunity
-func SearchReplicated(query string) (results []Result) {
-	c := make(chan Result)
-	go func() { c <- FirstResult(query, Web, Web2) }()
-	go func() { c <- FirstResult(query, Image, Image2) }()
-	go func() { c <- FirstResult(query, Video, Video2) }()
-	timeout := time.After(80 * time.Millisecond)
+func Replicated(query string, timeout time.Duration) ([]Result, error) {
+	c := make(chan Result, 3)
+	go func() { c <- FirstResult(query, Web1, Web2) }()
+	go func() { c <- FirstResult(query, Image1, Image2) }()
+	go func() { c <- FirstResult(query, Video1, Video2) }()
+	// timeout := time.After(80 * time.Millisecond)
+	timer := time.After(timeout)
+
+	var results []Result
 	for i := 0; i < 3; i++ {
 		select {
 		case result := <-c:
 			results = append(results, result)
-		case <-timeout:
+		case <-timer:
 			fmt.Println("timed out")
-			return
+			return results, errors.New("timed out")
 		}
 	}
-	return
+	return results, nil
 }

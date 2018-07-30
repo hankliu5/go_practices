@@ -1,26 +1,28 @@
 package search
 
 import (
+	"errors"
 	"fmt"
 	"time"
 )
 
 // concurrent search with timeout so it doesn't wait for the long responses.
-func SearchTimeout(query string) (results []Result) {
-	c := make(chan Result)
-	go func() { c <- Web(query) }()
-	go func() { c <- Image(query) }()
-	go func() { c <- Video(query) }()
+func Timeout(query string, timeout time.Duration) ([]Result, error) {
+	c := make(chan Result, 3)
+	go func() { c <- Web1(query) }()
+	go func() { c <- Image1(query) }()
+	go func() { c <- Video1(query) }()
 
-	timeout := time.After(80 * time.Millisecond)
+	timer := time.After(timeout)
+	var results []Result
 	for i := 0; i < 3; i++ {
 		select {
 		case result := <-c:
 			results = append(results, result)
-		case <-timeout:
+		case <-timer:
 			fmt.Println("timed out")
-			return
+			return results, errors.New("timed out")
 		}
 	}
-	return
+	return results, nil
 }
