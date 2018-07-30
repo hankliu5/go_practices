@@ -4,34 +4,36 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
+
+	"github.com/hankliu5/go_practices/concurrency/fake_search/search"
 )
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
 	start := time.Now()
-	results := SearchSerial("golang")
+	results := search.SearchSerial("golang")
 	elapsed := time.Since(start)
 	fmt.Println(elapsed)
 
 	start = time.Now()
-	results = SearchParallel("golang")
+	results = search.SearchParallel("golang")
 	elapsed = time.Since(start)
 	fmt.Println(elapsed)
 
 	start = time.Now()
-	results = SearchTimeout("golang")
+	results = search.SearchTimeout("golang")
 	elapsed = time.Since(start)
 	fmt.Println(elapsed)
 	fmt.Println(results)
 
 	start = time.Now()
-	result := FirstResult("golang", fakeSearch("replica 1"), fakeSearch("replica 2"))
+	result := search.FirstResult("golang", search.FakeSearch("replica 1"), search.FakeSearch("replica 2"))
 	elapsed = time.Since(start)
 	fmt.Println(elapsed)
 	fmt.Println(result)
 
 	start = time.Now()
-	results = SearchReplicated("golang")
+	results = search.SearchReplicated("golang")
 	elapsed = time.Since(start)
 	fmt.Println(elapsed)
 	fmt.Println(results)
