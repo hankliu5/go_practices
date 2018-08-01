@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <script>
+    websocket = new WebSocket("ws://{{.}}/socket");
+    websocket.onmessage = function (m) { console.log("Received:", m.data); };
+  </script>
+</head>
+
+</html>
