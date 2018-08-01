@@ -1,0 +1,15 @@
+<html>
+<head/>
+
+<body>
+  <ol>
+    {{range .Results}}
+    <li>{{.Title}} -
+      <a href="{{.URL}}">{{.URL}}</a>
+    </li>
+    {{end}}
+  </ol>
+  <p>{{len .Results}} results in {{.Elapsed}}</p>
+</body>
+
+</html>

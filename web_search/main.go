@@ -12,19 +12,7 @@ import (
 )
 
 var listenAddr = "localhost:4000"
-var responseTemplate = template.Must(template.New("results").Parse(`
-<html>
-<head/>
-<body>
-<ol>
-{{range .Results}}
-<li>{{.Title}} - <a href="{{.URL}}">{{.URL}}</a></li>
-{{end}}
-</ol>
-<p>{{len .Results}} results in {{.Elapsed}}</p>
-</body>
-</html>
-`))
+var responseTemplate = template.Must(template.ParseFiles("result.html"))
 
 type response struct {
 	Results []search.Result
